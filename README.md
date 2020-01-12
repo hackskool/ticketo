@@ -1,6 +1,6 @@
 # Ticketo
 
-Generates tickets for under the stars based on a templates and list of email, ticket count
+Generates tickets for any event based on a templates and list of email, ticket count
 
 
 # Setup
