@@ -1,7 +1,4 @@
 """
-Copyright 2020 by Under the stars.
-
-
 Author
 
 Priyanshu Jain <priyanshu@pm.me>
@@ -14,6 +11,45 @@ from PIL import Image, ImageDraw, ImageFont
 import pandas as pd
 import pyqrcode 
 from pyqrcode import QRCode 
+from vars import LOGO_IMAGE_PATH, BLACK_COLOR, GRAY_COLOR
+
+def copy_paste_image(source_img, target_img, offset, is_source_url=False):
+    """
+    create Image object by pasting source image on target image using an offset
+    
+    Parameters
+    ----------
+
+    source_img: PIL Image
+            image that need to be pasted
+
+    target_img: PIL Image
+            image that need pasted upon
+
+    offset: tuple
+            offset position on target image
+    
+    is_source_url: bool
+            if source image is an url
+
+    Returns
+    -------
+    none
+
+    """
+    if is_source_url:
+        source_img = Image.open(source_img)
+
+    target_img.paste(source_img, offset)
+
+
+def gen_qr_code(email, count, ticket_number):
+    # generate qr code
+    qr_code_str = "email: {0}\ncount: {1}\nExcel row number: {2}\n".format(
+        email, count, ticket_number)
+    qr_code = pyqrcode.create(qr_code_str) 
+    
+    qr_code.png("tickets/qrcode.png", scale=8)
 
 
 def create_image(email, count, ticket_number):
@@ -34,37 +70,31 @@ def create_image(email, count, ticket_number):
     None
 
     """
-    image = Image.open('templates/background.jpeg')
+    try:
+        image = Image.open('templates/background.jpeg')
+    except FileNotFoundError:
+        image = Image.new('RGB', (1000, 1000), color = 'white')
 
     draw = ImageDraw.Draw(image)
-
-
-    font1 = ImageFont.truetype('fonts/OpenSans-Regular.ttf', size=135)
-    font2 = ImageFont.truetype('fonts/OpenSans-Regular.ttf', size=55)
-
-    (x, y) = (295, 785)
-    message = str(count)
-    color = 'rgb(224, 174, 96)'
-    draw.text((x, y), message, fill=color, font=font1)
-
-    (x, y) = (240, 962)
-    draw.text((x, y), email, fill=color, font=font2)
-
-    # generate qr code
-    qr_code_str = "email: {0}\ncount: {1}\nExcel row number: {2}\n".format(
-        email, count, ticket_number)
-    qr_code = pyqrcode.create(qr_code_str) 
     
-    qr_code.png("qrcode.png", scale=5)
-    qr_code = Image.open("qrcode.png")
+    # paste logo
+    logo_offset = (100, 50)
+    copy_paste_image(LOGO_IMAGE_PATH, image, logo_offset, is_source_url=True)
 
-    offset = (950, 915)
+    font = ImageFont.truetype('fonts/OpenSans-Regular.ttf', size=32)
+
+    draw.text((100, 300), "SEATS", fill=BLACK_COLOR, font=font)
+    draw.text((100, 350), str(count), fill=GRAY_COLOR, font=font)
+
+    (x, y) = (100, 785)
+    # draw.text((x, y), email, fill=color, font=font)
+
+    # Add QR CODE
+    gen_qr_code(email, count, ticket_number)
+    qr_code = Image.open("tickets/qrcode.png")
+    offset = (300, 500)
     image.paste(qr_code, offset)
-
-
     image.save('tickets/{}.png'.format(email))
-
-
 
 
 def main():
@@ -76,7 +106,7 @@ def main():
     for index, row in df.iterrows():
         email = row['email']
         count = row['Count']
-        ticket_number = row['ticket_no']
+        ticket_number = row['ticket_number']
         create_image(email, count, ticket_number)
 
 
